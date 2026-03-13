@@ -7,17 +7,15 @@
 - **Firebase Firestore**
 
 ### Running with Docker
+Because this is using compose file, simply run 
 
-Build the image (run from the project root):
-
-```bash
-docker build -t poolantir-dashboard -f app/Dockerfile .
+To start the container:
+```sh
+docker compose up
 ```
 
-Run the container (forward port 8050 by default):
-
-```bash
-docker run poolantir-dashboard poolantir-dashboard
+To stop and remove the container:
+```sh
+docker compose down
 ```
 
-Then open `http://localhost:8050` in your browser.

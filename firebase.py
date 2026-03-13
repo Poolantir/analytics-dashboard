@@ -23,7 +23,6 @@ def clear_database():
 def create_bathroom(
     bathroom_id: str | None = None,
     gender: str | None = None,
-    name: str | None = None,
     address: str | None = None,
     room_number: str | None = None,
     floor: str | None = None,
@@ -70,7 +69,6 @@ def create_toilet(
 
 def create_sensor(
     sensor_id: str | None = None,
-    name: str | None = None,
     toilet_id: str | None = None,
 ):
     """
@@ -81,7 +79,6 @@ def create_sensor(
 
     data = {
         "id": sensor_id,
-        "name": name,
         "toilet_id": toilet_id,
     }
 
@@ -137,7 +134,6 @@ if __name__ == "__main__":
         # Create one bathroom record.
         bathroom_id = create_bathroom(
             gender="unisex",
-            name="Main Hall Bathroom",
             address="123 Main St",
             room_number="101",
             floor="1",
@@ -156,6 +152,5 @@ if __name__ == "__main__":
                 bathroom_id=bathroom_id,
             )
             create_sensor(
-                name=f"{model} Sensor",
                 toilet_id=t_id,
             )

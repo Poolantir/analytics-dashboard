@@ -7,7 +7,7 @@ def footer():
             [
                 dmc.Text("Poolantir", fw=700, size="sm"),
                 dmc.Text(
-                    "Pool analytics dashboard",
+                    "University of Iowa, Internet of Things 2026",
                     size="xs",
                     c="dimmed",
                 ),

@@ -23,7 +23,6 @@ app.title = "Poolantir"
 
 app.layout = dmc.MantineProvider(
     theme={
-        "primaryColor": "blue",
         "defaultRadius": "sm",
         "components": {
             "Card": {
@@ -38,7 +37,12 @@ app.layout = dmc.MantineProvider(
         dcc.Location(id="url"),
         dmc.AppShell(
             [
-                dmc.AppShellHeader(header()),
+                dmc.AppShellHeader(
+                    dmc.Box(
+                        id="app-header",
+                        h="100%",
+                    )
+                ),
                 dmc.AppShellMain(
                     dmc.Box(
                         id="page-content",
@@ -52,6 +56,14 @@ app.layout = dmc.MantineProvider(
         ),
     ],
 )
+
+
+@app.callback(
+    Output("app-header", "children"),
+    Input("url", "pathname"),
+)
+def update_header(pathname):
+    return header(pathname or "/")
 
 
 @app.callback(

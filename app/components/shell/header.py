@@ -1,26 +1,47 @@
 import dash_mantine_components as dmc
-from dash_iconify import DashIconify
 from dash import html
 
-PAGE_LINKS = {
-    "Monitoring": "mdi:monitor-dashboard",
-    "Bathrooms": "mdi:toilet",
-    "Settings": "tabler:settings",
-}
 
-page_items = []
-for key, val in PAGE_LINKS.items():
-    href = f"/{key.lower()}"
-    page_items.append(
-        dmc.NavLink(
-            label=dmc.Text(key, fz={"base": 18, "sm": 14, "md": 16, "lg": 22}),
-            href=href,
-            leftSection=DashIconify(icon=val, width=20),
+PAGE_ORDER = ["Monitoring", "Bathrooms", "Settings"]
+
+
+def _current_page_from_path(pathname: str) -> str:
+    if pathname in ("/", "/monitoring"):
+        return "Monitoring"
+    if pathname == "/bathrooms":
+        return "Bathrooms"
+    if pathname == "/settings":
+        return "Settings"
+    return ""
+
+
+def _nav_items(pathname: str):
+    current_page = _current_page_from_path(pathname or "/")
+    items = []
+    for page in PAGE_ORDER:
+        href = "/monitoring" if page == "Monitoring" else f"/{page.lower()}"
+        is_active = page == current_page
+        text_color = "#4B382E" if is_active else "#888888"
+        font_weight = 700 if is_active else 300
+
+        items.append(
+            dmc.Anchor(
+                dmc.Text(
+                    page,
+                    fz={"base": 14, "sm": 12, "md": 14, "lg": 16},
+                    c=text_color,
+                    fw=font_weight,
+                ),
+                href=href,
+                underline=False,
+                style={"textDecoration": "none"},
+            )
         )
-    )
+
+    return items
 
 
-def header():
+def header(pathname: str = "/"):
     lhs = dmc.Group(
         [
             dmc.Image(
@@ -34,27 +55,11 @@ def header():
         px="md",
     )
 
-    menu = dmc.Menu(
-        [
-            dmc.MenuTarget(
-                dmc.ActionIcon(
-                    DashIconify(icon="stash:burger-classic-light"),
-                    size="lg",
-                    variant="subtle",
-                ),
-            ),
-            dmc.MenuDropdown(
-                [
-                    dmc.MenuLabel("Pages", fz="lg"),
-                    *page_items,
-                ]
-            ),
-        ]
-    )
-
-    rhs = dmc.Center(
-        [menu],
+    rhs = dmc.Group(
+        _nav_items(pathname),
         h="100%",
+        gap="md",
+        px="md",
     )
 
     return dmc.Group(

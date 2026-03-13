@@ -3,16 +3,32 @@ import dash_mantine_components as dmc
 import os
 from pathlib import Path
 
-from pages.monitoring import monitoring_layout
-from pages.bathrooms import bathrooms_layout
-from pages.settings import settings_layout
+import firebase_admin
+from firebase_admin import credentials, firestore
+
+from pages.monitoring import MonitoringPage
+# from pages.bathrooms import bathrooms_layout
+# from pages.settings import settings_layout
 
 from components.shell.header import header
 from components.shell.footer import footer
 
+# ============================
+#         ENVIRONMENT
+# ============================
 HOST = os.getenv("HOST", "0.0.0.0")
 DASH_PORT = os.getenv("DASH_PORT", "8000")
 
+# ============================
+#    FIREBASE CONNECTION
+# ============================
+cred = credentials.Certificate("firebase.json")
+firebase_admin.initialize_app(cred)
+db = firestore.client()
+
+# ============================
+#    INITIALIZE DASH APP
+# ============================
 app = Dash(
     name="Poolantir",
     assets_folder=str(Path(__file__).parent / "assets"),
@@ -21,6 +37,16 @@ app = Dash(
 
 app.title = "Poolantir"
 
+# ============================
+#        PAGE OBJECTS
+# ============================
+monitoring_page_obj = MonitoringPage(app=app, db=db)
+# bathrooms_page_obj = BathroomsPage(app=app, db=db)
+# settings_page_obj = SettingsPage(app=app, db=db)
+
+# ============================
+#           LAYOUT
+# ============================
 app.layout = dmc.MantineProvider(
     theme={
         "defaultRadius": "sm",
@@ -38,10 +64,7 @@ app.layout = dmc.MantineProvider(
         dmc.AppShell(
             [
                 dmc.AppShellHeader(
-                    dmc.Box(
-                        id="app-header",
-                        h="100%",
-                    )
+                    header()
                 ),
                 dmc.AppShellMain(
                     dmc.Box(
@@ -57,37 +80,22 @@ app.layout = dmc.MantineProvider(
     ],
 )
 
-
-@app.callback(
-    Output("app-header", "children"),
-    Input("url", "pathname"),
-)
-def update_header(pathname):
-    return header(pathname or "/")
-
-
+# ============================
+#           ROUTING
+# ============================
 @app.callback(
     Output("page-content", "children"),
     Input("url", "pathname"),
 )
 def display_page(pathname):
     if pathname in ("/", "/monitoring"):
-        return monitoring_layout()
-    elif pathname == "/bathrooms":
-        return bathrooms_layout()
-    elif pathname == "/settings":
-        return settings_layout()
-    return html.Div(
-        dmc.Stack(
-            [
-                dmc.Title("404", order=1),
-                dmc.Text("Page not found"),
-            ],
-            align="center",
-            justify="center",
-            h="60vh",
-        )
-    )
+        return monitoring_page_obj.layout()
+    # elif pathname == "/bathrooms":
+    #     return bathrooms_page_obj.layout()
+    # elif pathname == "/settings":
+    #     return settings_page_obj.layout()
+    else:
+        return html.Div("404")
 
 
 if __name__ == "__main__":

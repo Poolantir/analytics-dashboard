@@ -2,14 +2,27 @@ import firebase_admin
 from firebase_admin import credentials, firestore
 import uuid
 from datetime import datetime
+import argparse
 
 cred = credentials.Certificate("firebase.json")
 firebase_admin.initialize_app(cred)
 db = firestore.client()
 
 
+def clear_database():
+    """
+    Remove all documents from all top-level collections in the Firestore database.
+    This is intended for development/testing use only.
+    """
+    for collection_ref in db.collections():
+        docs = list(collection_ref.stream())
+        for doc in docs:
+            doc.reference.delete()
+
+
 def create_bathroom(
     bathroom_id: str | None = None,
+    gender: str | None = None,
     name: str | None = None,
     address: str | None = None,
     room_number: str | None = None,
@@ -23,7 +36,7 @@ def create_bathroom(
 
     data = {
         "id": bathroom_id,
-        "name": name,
+        "gender": gender,
         "address": address,
         "room_number": room_number,
         "floor": floor,
@@ -32,13 +45,33 @@ def create_bathroom(
     db.collection("bathrooms").document(bathroom_id).set(data)
     return bathroom_id
 
+def create_toilet(
+    toilet_id: str | None = None,
+    toilet_type: str | None = None,
+    model: str | None = None,
+    bathroom_id: str | None = None,
+):
+    """
+    Create a toilet document in the `toilets` collection.
+    """
+    if toilet_id is None:
+        toilet_id = str(uuid.uuid4())
+
+    data = {
+        "id": toilet_id,
+        "toilet_type": toilet_type,
+        "model": model,
+        "bathroom_id": bathroom_id,
+    }
+
+    db.collection("toilets").document(toilet_id).set(data)
+    return toilet_id
+
 
 def create_sensor(
     sensor_id: str | None = None,
     name: str | None = None,
-    device_type: str | None = None,
-    bathroom_id: str | None = None,
-    toilet_type: str | None = None,
+    toilet_id: str | None = None,
 ):
     """
     Create a sensor document in the `sensors` collection.
@@ -49,9 +82,7 @@ def create_sensor(
     data = {
         "id": sensor_id,
         "name": name,
-        "device_type": device_type,
-        "bathroom_id": bathroom_id,
-        "toilet_type": toilet_type,
+        "toilet_id": toilet_id,
     }
 
     db.collection("sensors").document(sensor_id).set(data)
@@ -59,7 +90,7 @@ def create_sensor(
 
 
 def create_reading(
-    device_id: str,
+    sensor_id: str,
     start_time,
     end_time,
     duration: float,
@@ -75,7 +106,7 @@ def create_reading(
 
     data = {
         "id": reading_id,
-        "device_id": device_id,
+        "sensor_id": sensor_id,
         "start_time": start_time,
         "end_time": end_time,
         "duration": duration,
@@ -88,34 +119,43 @@ def create_reading(
 
 if __name__ == "__main__":
 
-    # Hard-coded example timestamps for a single reading
-    start_time = datetime(2025, 1, 1, 12, 0, 0)
-    end_time = datetime(2025, 1, 1, 12, 5, 0)
-    duration_seconds = (end_time - start_time).total_seconds()
-    reading_date = start_time.date().isoformat()
-
-    b_id = create_bathroom(
-        name="Test Bathroom",
-        address="123 Main St",
-        room_number="101",
-        floor="1",
+    parser = argparse.ArgumentParser(
+        description="Firestore bathroom/toilet/sensor utilities."
     )
-
-    s_id = create_sensor(
-        name="Door Sensor 1",
-        device_type="door",
-        bathroom_id=b_id,
-        toilet_type="unisex",
+    parser.add_argument(
+        "-c",
+        "--clear",
+        action="store_true",
+        help="Clear all Firestore data and exit.",
     )
+    args = parser.parse_args()
 
-    r_id = create_reading(
-        device_id=s_id,
-        start_time=start_time,
-        end_time=end_time,
-        duration=duration_seconds,
-        date=reading_date,
-    )
+    if args.clear:
+        clear_database()
+        print("All Firestore data cleared.")
+    else:
+        # Create one bathroom record.
+        bathroom_id = create_bathroom(
+            gender="unisex",
+            name="Main Hall Bathroom",
+            address="123 Main St",
+            room_number="101",
+            floor="1",
+        )
 
-    print("Created bathroom:", b_id)
-    print("Created sensor:", s_id)
-    print("Created reading:", r_id)
+        # Create six toilets (3 urinals and 3 toilets), each with an attached sensor.
+        toilet_specs = (
+            [("urinal", f"Urinal {i + 1}") for i in range(3)]
+            + [("toilet", f"Toilet {i + 1}") for i in range(3)]
+        )
+
+        for toilet_type, model in toilet_specs:
+            t_id = create_toilet(
+                toilet_type=toilet_type,
+                model=model,
+                bathroom_id=bathroom_id,
+            )
+            create_sensor(
+                name=f"{model} Sensor",
+                toilet_id=t_id,
+            )

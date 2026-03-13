@@ -1,0 +1,8 @@
+services:
+  web_application:
+    container_name: poolantir-analytics-dashboard
+    build: 
+      context: .
+      dockerfile: app/Dockerfile
+    ports:
+      - "8000:8000"
